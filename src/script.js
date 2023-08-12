@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import CANNON from 'cannon'
+
 
 THREE.ColorManagement.enabled = false
 
@@ -32,6 +34,23 @@ const environmentMapTexture = cubeTextureLoader.load([
     '/textures/environmentMaps/0/pz.png',
     '/textures/environmentMaps/0/nz.png'
 ])
+
+/**
+ * Physics
+ */
+// World
+const world = new CANNON.World()
+world.gravity.set(0, - 9.82, 0)
+
+// Sphere
+const sphereShape = new CANNON.Sphere(0.5)
+const sphereBody = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(0, 3, 0),
+    shape: sphereShape
+})
+world.addBody(sphereBody)
+
 
 /**
  * Test sphere
@@ -91,8 +110,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -134,10 +152,17 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  * Animate
  */
 const clock = new THREE.Clock()
+let oldElapsedTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - oldElapsedTime
+
+    // Update physics world
+    world.step(1 / 60, deltaTime, 3)
+
+    // Update sphere
+    sphere.position.copy(sphereBody.position)
 
     // Update controls
     controls.update()
